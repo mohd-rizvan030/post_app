@@ -40,24 +40,39 @@ class PostsController < ApplicationController
   # PATCH/PUT /posts/1
   # PATCH/PUT /posts/1.json
   def update
-    respond_to do |format|
-      if @post.update(post_params)
-        format.html { redirect_to @post, notice: 'Post was successfully updated.' }
-        format.json { render :show, status: :ok, location: @post }
-      else
-        format.html { render :edit }
-        format.json { render json: @post.errors, status: :unprocessable_entity }
+    if can_update?
+      respond_to do |format|
+        if @post.update(post_params)
+          format.html { redirect_to @post, notice: 'Post was successfully updated.' }
+          format.json { render :show, status: :ok, location: @post }
+        else
+          format.html { render :edit }
+          format.json { render json: @post.errors, status: :unprocessable_entity }
+        end
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to @post, alert: 'You are not permitted to update this post.' }
+        format.json { head  'You are not permitted to update this post.' }
       end
     end
+
   end
 
   # DELETE /posts/1
   # DELETE /posts/1.json
   def destroy
-    @post.destroy
-    respond_to do |format|
-      format.html { redirect_to posts_url, notice: 'Post was successfully destroyed.' }
-      format.json { head :no_content }
+    if can_destroy?
+      @post.destroy
+      respond_to do |format|
+        format.html { redirect_to posts_url, notice: 'Post was successfully destroyed.' }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to posts_url, alert: 'You are noy permitted to destroy this post.' }
+        format.json { head 'You are noy permitted to destroy this post.' }
+      end
     end
   end
 
@@ -71,5 +86,13 @@ class PostsController < ApplicationController
     def post_params
       params["post"]["user_id"] = current_user.id
       params.require(:post).permit(:title, :url, :user_id)
+    end
+
+    def can_destroy?
+      @post.user_id == current_user.id
+    end
+
+    def can_update?
+      @post.user_id == current_user.id
     end
 end
